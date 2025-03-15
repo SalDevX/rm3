@@ -1,0 +1,22 @@
+import os
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import scoped_session, sessionmaker
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize SQLAlchemy
+db = SQLAlchemy()
+
+# Function to initialize the database with Flask app
+def init_db(app):
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False  # Avoids warnings
+    db.init_app(app)
+    
+    # Bind session factory to the engine
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=db.engine)
+    
+    # Scoped session for thread safety
+    db.session = scoped_session(SessionLocal)
