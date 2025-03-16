@@ -19,43 +19,50 @@ const RecipeList: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    fetch("http://127.0.0.1:5000/recipes")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        console.log("✅ Raw API response:", data);
+  
 
-        if (!Array.isArray(data)) {
-          console.error("❌ Expected an array but got:", data);
-          setRecipes([]);
-          return;
-        }
 
-        const formattedRecipes = data.map((recipe) => ({
-          ...recipe,
-          total_cost: Number(recipe.total_cost) || 0,
-          total_cost_formatted: new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: "IDR",
-            minimumFractionDigits: 2,
-          }).format(recipe.total_cost),
-        }));
+useEffect(() => {
+  fetch("http://127.0.0.1:5000/recipes")
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then((data) => {
+      console.log("✅ Raw API response:", data);  // Log response here
 
-        setRecipes(formattedRecipes);
-      })
-      .catch((error) => {
-        console.error("❌ Fetch error:", error);
+      // Check if the data is an array as expected
+      if (!Array.isArray(data)) {
+        console.error("❌ Expected an array but got:", data);
         setRecipes([]);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+        return;
+      }
+
+      const formattedRecipes = data.map((recipe) => ({
+        ...recipe,
+        total_cost: Number(recipe.total_cost) || 0,
+        total_cost_formatted: new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+          minimumFractionDigits: 2,
+        }).format(recipe.total_cost),
+      }));
+
+      console.log("✅ Formatted Recipes:", formattedRecipes);  // Log formatted recipes
+
+      setRecipes(formattedRecipes);  // Update state with formatted data
+    })
+    .catch((error) => {
+      console.error("❌ Fetch error:", error);
+      setRecipes([]);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
+}, []);
+
 
   const apiUrl = "http://127.0.0.1:5000"; // Make sure this points to your backend
 
