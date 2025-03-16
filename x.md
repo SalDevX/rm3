@@ -1,47 +1,56 @@
-```py
+Okay, let's see. Your code is mostly correct, but there are a couple of issues:  
 
-import sys
-import os
+### **Fix These Issues**
+1. **Indentation Error in the Home Route**  
+   ```python
+   @app.route("/", methods=["GET"])
+   def home():
+       return jsonify({"message": "Welcome to the Recipe Manager API!"})
+   ```
+   - You have an extra space before `@app.route("/")`, which will cause an `IndentationError`. Remove it.
 
-# Ensure the correct path is set before importing modules
-sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+2. **Duplicate `CORS(app)` Call**  
+   - You’re calling `CORS(app)` twice. Remove the second call (`CORS(app)`) after `migrate = Migrate(app, db)`.
 
-from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from dotenv import load_dotenv
-from database import db
-from models import Recipe, Ingredient
-from flask_migrate import Migrate
-from sqlalchemy import func
-from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+3. **Use `session.rollback()` for Safety**  
+   - In `save_recipe()`, if anything goes wrong after adding the recipe but before adding ingredients, the database will have an incomplete record.  
+   - Fix it by wrapping it in a `try-except`:
+     ```python
+     try:
+         recipe = Recipe(recipe_name=recipe_name, recipe_total_cost=total_cost, section=section)
+         db.session.add(recipe)
+         db.session.commit()  # Commit the recipe first to get the ID
 
-# Load .env only in development
-if os.getenv("FLASK_ENV") != "production":
-    load_dotenv()
+         for ing in ingredients:
+             ingredient = Ingredient(
+                 recipe_id=recipe.id,
+                 item_name=ing["item_name"],
+                 packaging_quantity=ing["packaging_quantity"],
+                 price_item=ing["price_item"],
+                 grams_recipe=ing["grams_recipe"],
+                 total_cost=ing["total_cost"]
+             )
+             db.session.add(ingredient)
 
-# Flask app setup
-app = Flask(__name__)
+         db.session.commit()
+         return jsonify({"message": "Recipe saved successfully!"}), 201
+     except Exception as e:
+         db.session.rollback()  # Rollback if anything fails
+         print(f"❌ Error saving recipe: {str(e)}")
+         return jsonify({"error": "Failed to save recipe"}), 500
+     ```
 
-# CORS Configuration (Allow localhost + your Heroku frontend)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://your-heroku-app.herokuapp.com"]}})
+4. **Ensure Your Migrations Are Up to Date**  
+   - Run this before redeploying to Heroku:
+     ```bash
+     flask db migrate -m "Ensure latest changes"
+     flask db upgrade
+     ```
 
+### **Final Steps**  
+✅ **Fix the indentation issue**  
+✅ **Remove the duplicate `CORS(app)`**  
+✅ **Wrap `save_recipe()` in `try-except` with rollback**  
+✅ **Run migrations (`flask db migrate && flask db upgrade`)**  
 
-CORS(app, resources={r"/recipes/*": {"origins": ["http://localhost:3000", "https://your-actual-heroku-app-url.herokuapp.com"]}})
-
-
-# Set up the database URI from environment variables
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")  # Ensure DATABASE_URL is set in Heroku
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# Initialize extensions
-db.init_app(app)
-migrate = Migrate(app, db)
-
-# Example route
-@app.route("/")
-def home():
-    return jsonify({"message": "Recipe Manager API is running!"})
-
-if __name__ == "__main__":
-    app.run(debug=True)
+After that, redeploy and check if everything works! 🚀
