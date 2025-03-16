@@ -24,16 +24,19 @@ app = Flask(__name__)
 
 # Add CORS configuration at the top of app.py
 # CORS Configuration (Allow localhost + Heroku frontend)
+# Enable CORS for all routes
 CORS(
     app,
     resources={
         r"/*": {
             "origins": [
-                "http://localhost:3000",
-                "https://recipe-manager3-d7093a765939.herokuapp.com",
+                "http://localhost:3000",   # For local dev
+                "https://recipe-manager3-d7093a765939.herokuapp.com",  # For Heroku
+                "https://recipe-manager3.netlify.app"  # For Netlify
             ]
         }
     },
+    supports_credentials=True  # Only if you need to send cookies or auth headers
 )
 
 
@@ -60,12 +63,17 @@ db.init_app(app)
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)  # Add this line
 
-# Enable CORS for all routes
-CORS(app)
+
 
 # ✅ Route for fetching recipes
 # ✅ Route for fetching recipes
 # Modify the get_recipes route
+
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 
 
