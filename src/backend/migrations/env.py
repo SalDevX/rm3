@@ -5,6 +5,12 @@ from flask import current_app
 
 from alembic import context
 
+
+app = current_app._get_current_object()  # Alternatively, get the app object if needed
+with app.app_context():
+    # Proceed with migration logic
+    target_db = current_app.extensions['migrate'].db
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
