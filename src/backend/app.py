@@ -56,8 +56,7 @@ CORS(app)
 @app.route('/recipes', methods=['GET'])
 def get_recipes():
     try:
-        recipes = Recipe.query.all()
-
+        recipes = Recipe.query.order_by(Recipe.recipe_total_cost.desc()).all()
         for r in recipes:
             print(f"Recipe: {r.recipe_name}, Total Cost: {r.recipe_total_cost}")  # Debugging
 
@@ -139,13 +138,14 @@ def delete_recipe(id):
 def save_recipe():
     data = request.json
     recipe_name = data.get("recipe_name")
+    section = data.get("section", "Uncategorized")  # Default to 'Uncategorized' if no section is provided
     ingredients = data.get("ingredients", [])
 
     # Calculate total cost from ingredients
     total_cost = sum(ing["total_cost"] for ing in ingredients)
 
     # Create and save recipe
-    recipe = Recipe(recipe_name=recipe_name, recipe_total_cost=total_cost)
+    recipe = Recipe(recipe_name=recipe_name, recipe_total_cost=total_cost, section=section)
     db.session.add(recipe)
     db.session.commit()
 

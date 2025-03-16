@@ -21,6 +21,7 @@ const RecipeTable: React.FC = () => {
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 90 },
     { field: 'name', headerName: 'Recipe Name', width: 200 },
+    { field: 'section', headerName: 'Section', width: 150 }, // Add section column
     { field: 'ingredients', headerName: 'Ingredients', width: 300 },
   ];
 
@@ -46,6 +47,7 @@ const RecipeTable: React.FC = () => {
 
 const CreateRecipe: React.FC = () => {
   const [recipeName, setRecipeName] = useState<string>("");
+  const [section, setSection] = useState(''); // Manage section state
   const [ingredients, setIngredients] = useState<Ingredient[]>([
     { item_name: "", packaging_quantity: 0, price_item: 0, grams_recipe: 0, total_cost: 0 },
   ]);
@@ -92,6 +94,7 @@ const CreateRecipe: React.FC = () => {
 
   const formattedData = {
     recipe_name: recipeName,
+    section: section,  // Ensure section is included
     recipe_total_cost: recipeTotalCost,  // 🔹 Send calculated total cost
     ingredients: formattedIngredients,
   };
@@ -103,6 +106,7 @@ const CreateRecipe: React.FC = () => {
     await axios.post("http://127.0.0.1:5000/save-recipes", formattedData);
     alert("Recipe saved successfully!");
     setRecipeName("");
+    setSection("");  // Reset section field
     setIngredients([{ item_name: "", packaging_quantity: 0, price_item: 0, grams_recipe: 0, total_cost: 0 }]);
     setTotalCost(0); // Reset total cost
   } catch (error) {
@@ -114,6 +118,13 @@ const CreateRecipe: React.FC = () => {
     <div>
       <h2>Create Recipe</h2>
       <form onSubmit={handleSubmit}>
+      <label>Section:</label>
+        <input
+          type="text"
+          value={section}
+          onChange={(e) => setSection(e.target.value)}
+          required
+        />
         <label>Recipe Name:</label>
         <input
           type="text"
@@ -121,6 +132,7 @@ const CreateRecipe: React.FC = () => {
           onChange={(e) => setRecipeName(e.target.value)}
           required
         />
+      
 
         <h3>Ingredients</h3>
 

@@ -6,6 +6,7 @@ class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     recipe_name = db.Column(db.String(255), nullable=False, server_default='Unnamed Recipe')
     recipe_total_cost = db.Column(db.Float, nullable=False, default=0.0)  # ✅ Ensure it has a default value
+    section = db.Column(db.String(255), nullable=False, default='Uncategorized')  # New field for Sections
     ingredients = db.relationship('Ingredient', backref='recipe', lazy=True, cascade="all, delete", passive_deletes=True)
 
     def to_dict(self):
@@ -13,6 +14,7 @@ class Recipe(db.Model):
             "id": self.id,
             "recipe_name": self.recipe_name,
             "total_cost": self.recipe_total_cost,  # ✅ Include total_cost
+            "section": self.section,  # Include section in the dictionary
             "ingredients": [ingredient.to_dict() for ingredient in self.ingredients],
         }
 
