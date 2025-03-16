@@ -1,56 +1,98 @@
-Okay, let's see. Your code is mostly correct, but there are a couple of issues:  
+```py
 
-### **Fix These Issues**
-1. **Indentation Error in the Home Route**  
-   ```python
-   @app.route("/", methods=["GET"])
-   def home():
-       return jsonify({"message": "Welcome to the Recipe Manager API!"})
-   ```
-   - You have an extra space before `@app.route("/")`, which will cause an `IndentationError`. Remove it.
+import logging
+from logging.config import fileConfig
+from flask import Flask
+from flask import current_app
 
-2. **Duplicate `CORS(app)` Call**  
-   - You’re calling `CORS(app)` twice. Remove the second call (`CORS(app)`) after `migrate = Migrate(app, db)`.
+from alembic import context
 
-3. **Use `session.rollback()` for Safety**  
-   - In `save_recipe()`, if anything goes wrong after adding the recipe but before adding ingredients, the database will have an incomplete record.  
-   - Fix it by wrapping it in a `try-except`:
-     ```python
-     try:
-         recipe = Recipe(recipe_name=recipe_name, recipe_total_cost=total_cost, section=section)
-         db.session.add(recipe)
-         db.session.commit()  # Commit the recipe first to get the ID
+# Set up the Flask application and context
+def get_app():
+    app = Flask(__name__)
+    app.config.from_object('yourapp.config')  # Make sure to adjust this to point to your config
+    return app
 
-         for ing in ingredients:
-             ingredient = Ingredient(
-                 recipe_id=recipe.id,
-                 item_name=ing["item_name"],
-                 packaging_quantity=ing["packaging_quantity"],
-                 price_item=ing["price_item"],
-                 grams_recipe=ing["grams_recipe"],
-                 total_cost=ing["total_cost"]
-             )
-             db.session.add(ingredient)
+app = get_app()
 
-         db.session.commit()
-         return jsonify({"message": "Recipe saved successfully!"}), 201
-     except Exception as e:
-         db.session.rollback()  # Rollback if anything fails
-         print(f"❌ Error saving recipe: {str(e)}")
-         return jsonify({"error": "Failed to save recipe"}), 500
-     ```
+# Ensure the application context is pushed before accessing current_app
+with app.app_context():
+    target_db = current_app.extensions['migrate'].db
 
-4. **Ensure Your Migrations Are Up to Date**  
-   - Run this before redeploying to Heroku:
-     ```bash
-     flask db migrate -m "Ensure latest changes"
-     flask db upgrade
-     ```
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
 
-### **Final Steps**  
-✅ **Fix the indentation issue**  
-✅ **Remove the duplicate `CORS(app)`**  
-✅ **Wrap `save_recipe()` in `try-except` with rollback**  
-✅ **Run migrations (`flask db migrate && flask db upgrade`)**  
+# Interpret the config file for Python logging.
+fileConfig(config.config_file_name)
+logger = logging.getLogger('alembic.env')
 
-After that, redeploy and check if everything works! 🚀
+
+def get_engine():
+    try:
+        # this works with Flask-SQLAlchemy<3 and Alchemical
+        return current_app.extensions['migrate'].db.get_engine()
+    except (TypeError, AttributeError):
+        # this works with Flask-SQLAlchemy>=3
+        return current_app.extensions['migrate'].db.engine
+
+
+def get_engine_url():
+    try:
+        return get_engine().url.render_as_string(hide_password=False).replace(
+            '%', '%%')
+    except AttributeError:
+        return str(get_engine().url).replace('%', '%%')
+
+
+config.set_main_option('script_location', 'src/backend/migrations')
+target_db = current_app.extensions['migrate'].db
+
+
+def get_metadata():
+    if hasattr(target_db, 'metadatas'):
+        return target_db.metadatas[None]
+    return target_db.metadata
+
+
+def run_migrations_offline():
+    """Run migrations in 'offline' mode."""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url, target_metadata=get_metadata(), literal_binds=True
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online():
+    """Run migrations in 'online' mode."""
+    def process_revision_directives(context, revision, directives):
+        if getattr(config.cmd_opts, 'autogenerate', False):
+            script = directives[0]
+            if script.upgrade_ops.is_empty():
+                directives[:] = []
+                logger.info('No changes in schema detected.')
+
+    conf_args = current_app.extensions['migrate'].configure_args
+    if conf_args.get("process_revision_directives") is None:
+        conf_args["process_revision_directives"] = process_revision_directives
+
+    connectable = get_engine()
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=get_metadata(),
+            **conf_args
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
