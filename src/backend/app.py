@@ -24,7 +24,17 @@ app = Flask(__name__)
 
 # Add CORS configuration at the top of app.py
 # CORS Configuration (Allow localhost + Heroku frontend)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://recipe-manager3-d7093a765939.herokuapp.com"]}})
+CORS(
+    app,
+    resources={
+        r"/*": {
+            "origins": [
+                "http://localhost:3000",
+                "https://recipe-manager3-d7093a765939.herokuapp.com",
+            ]
+        }
+    },
+)
 
 
 # Database configuration
@@ -35,10 +45,10 @@ if db_url:
 
     # Ensure sslmode=require is added correctly
     query_params["sslmode"] = ["require"]
-    
+
     new_query = urlencode(query_params, doseq=True)
     db_url = urlunparse(parsed_url._replace(query=new_query))
-    
+
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -54,41 +64,55 @@ CORS(app)
 # ✅ Route for fetching recipes
 # ✅ Route for fetching recipes
 # Modify the get_recipes route
-@app.route('/recipes', methods=['GET'])
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "Welcome to the Recipe Manager API!"})
+
+
+@app.route("/recipes", methods=["GET"])
 def get_recipes():
     try:
         recipes = Recipe.query.order_by(Recipe.recipe_total_cost.desc()).all()
         for r in recipes:
-            print(f"Recipe: {r.recipe_name}, Total Cost: {r.recipe_total_cost}")  # Debugging
+            print(
+                f"Recipe: {r.recipe_name}, Total Cost: {r.recipe_total_cost}"
+            )  # Debugging
 
-        return jsonify([
-            {
-                'id': r.id, 
-                'recipe_name': r.recipe_name, 
-                'section': r.section,
-                'total_cost': float(r.recipe_total_cost)  # Change key to 'total_cost'
-            }
-            for r in recipes
-        ])
+        return jsonify(
+            [
+                {
+                    "id": r.id,
+                    "recipe_name": r.recipe_name,
+                    "section": r.section,
+                    "total_cost": float(
+                        r.recipe_total_cost
+                    ),  # Change key to 'total_cost'
+                }
+                for r in recipes
+            ]
+        )
 
     except Exception as e:
         print(f"❌ Database error: {str(e)}")  # Debugging
-        return jsonify({'error': 'Failed to fetch recipes'}), 500
-    
-    
+        return jsonify({"error": "Failed to fetch recipes"}), 500
+
     # New route for fetching a single recipe along with its ingredients
-@app.route('/recipes/<int:id>', methods=['GET'])
+
+
+@app.route("/recipes/<int:id>", methods=["GET"])
 def get_recipe(id):
     try:
         recipe = Recipe.query.get(id)
         if not recipe:
             return jsonify({"error": "Recipe not found"}), 404
-        
+
         ingredients = Ingredient.query.filter_by(recipe_id=id).all()
 
         # Calculate the total cost dynamically from ingredients
         total_cost = sum(ingredient.total_cost for ingredient in ingredients)
-        
+
         # Serialize recipe and ingredients
         recipe_data = {
             "id": recipe.id,
@@ -101,21 +125,23 @@ def get_recipe(id):
                     "packaging_quantity": ingredient.packaging_quantity,
                     "price_item": ingredient.price_item,
                     "grams_recipe": ingredient.grams_recipe,
-                     "total_cost": float(ingredient.total_cost),  # Ensure ingredient total cost is a float
+                    "total_cost": float(
+                        ingredient.total_cost
+                    ),  # Ensure ingredient total cost is a float
                 }
                 for ingredient in ingredients
             ],
         }
 
         return jsonify(recipe_data)
-    
+
     except Exception as e:
         print(f"❌ Error fetching recipe {id}: {str(e)}")  # Debugging
         return jsonify({"error": "Failed to fetch recipe"}), 500
 
 
 # ✅ Route for deleting a recipe
-@app.route('/recipes/<int:id>', methods=['DELETE'])
+@app.route("/recipes/<int:id>", methods=["DELETE"])
 def delete_recipe(id):
     try:
         recipe = Recipe.query.get(id)
@@ -125,7 +151,7 @@ def delete_recipe(id):
         # Delete associated ingredients using relationship
         for ingredient in recipe.ingredients:
             db.session.delete(ingredient)
-            
+
         db.session.delete(recipe)
         db.session.commit()
         return jsonify({"message": "Recipe deleted successfully!"}), 200
@@ -135,19 +161,24 @@ def delete_recipe(id):
         print(f"❌ Database error: {str(e)}")
         return jsonify({"error": "Failed to delete recipe"}), 500
 
+
 # ✅ Route for saving recipes
-@app.route('/save-recipes', methods=['POST'])
+@app.route("/save-recipes", methods=["POST"])
 def save_recipe():
     data = request.json
     recipe_name = data.get("recipe_name")
-    section = data.get("section", "Uncategorized")  # Default to 'Uncategorized' if no section is provided
+    section = data.get(
+        "section", "Uncategorized"
+    )  # Default to 'Uncategorized' if no section is provided
     ingredients = data.get("ingredients", [])
 
     # Calculate total cost from ingredients
     total_cost = sum(ing["total_cost"] for ing in ingredients)
 
     # Create and save recipe
-    recipe = Recipe(recipe_name=recipe_name, recipe_total_cost=total_cost, section=section)
+    recipe = Recipe(
+        recipe_name=recipe_name, recipe_total_cost=total_cost, section=section
+    )
     db.session.add(recipe)
     db.session.commit()
 
@@ -159,7 +190,7 @@ def save_recipe():
             packaging_quantity=ing["packaging_quantity"],
             price_item=ing["price_item"],
             grams_recipe=ing["grams_recipe"],
-            total_cost=ing["total_cost"]
+            total_cost=ing["total_cost"],
         )
         db.session.add(ingredient)
 
@@ -167,9 +198,7 @@ def save_recipe():
     return jsonify({"message": "Recipe saved successfully!"}), 201
 
 
-
-
-
 # ✅ Run Flask app
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
