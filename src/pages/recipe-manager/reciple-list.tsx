@@ -9,6 +9,7 @@ import { Link } from "react-router-dom"; // Import Link for navigation
 interface Recipe {
   id: number;
   recipe_name: string;
+  section: string;  // Add section property
   total_cost: number;
   total_cost_formatted: string;
 }
@@ -81,6 +82,13 @@ const RecipeList: React.FC = () => {
   };
 
   const columns: GridColDef[] = [
+    {
+      field: "section",
+      headerName: "Section",
+      flex: 1,
+      minWidth: 150,
+      sortable: true, // Enable sorting
+    },
     { field: "recipe_name", headerName: "Recipe Name", flex: 1, minWidth: 200 },
     {
       field: "total_cost_formatted",

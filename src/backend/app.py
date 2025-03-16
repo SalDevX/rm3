@@ -64,6 +64,7 @@ def get_recipes():
             {
                 'id': r.id, 
                 'recipe_name': r.recipe_name, 
+                'section': r.section,
                 'total_cost': float(r.recipe_total_cost)  # Change key to 'total_cost'
             }
             for r in recipes
