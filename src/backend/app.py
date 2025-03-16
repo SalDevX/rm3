@@ -66,6 +66,7 @@ CORS(app)
 # Modify the get_recipes route
 
 
+
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({"message": "Welcome to the Recipe Manager API!"})
