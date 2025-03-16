@@ -6,7 +6,8 @@ from flask import current_app
 from alembic import context
 
 # Replace this with the correct import path to your actual config module
-from yourapp import create_app  # Adjust this import path to your app's factory function
+from src.backend.app import app  # Adjust this to your actual app module
+
 
 # Create the app using your app factory
 app = create_app()
