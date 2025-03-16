@@ -1,11 +1,8 @@
 [build]
-  functions = "functions"
-  command = "pip install -r requirements.txt && python app.py"
+  functions = "netlify/functions"
+  command = "npm install && npm run build"
   publish = "build"
-  environment = { PYTHON_VERSION = "3.9" }
+  environment = { DATABASE_URL = "postgresql://neondb_owner:npg_Ar4WMIKpdOR5@ep-spring-frost-a1y4wsvc-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require" }
 
-  
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/proxy/:splat"
-  status = 200
+[[plugins]]
+  package = "@netlify/plugin-functions-installation"

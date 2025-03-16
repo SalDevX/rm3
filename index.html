@@ -24,6 +24,23 @@
     </title>
   </head>
   <body>
+    <h1>Favorite Coffee Blends</h1>
+  <ul id="coffee-blends"></ul>
+  <script>
+    async function fetchCoffeeBlends() {
+      const response = await fetch('/.netlify/functions/get_coffee_blends');
+      const data = await response.json();
+      const coffeeList = document.getElementById('coffee-blends');
+
+      data.forEach(coffee => {
+        const li = document.createElement('li');
+        li.textContent = coffee.blend_name;  // Assuming the data contains a field 'blend_name'
+        coffeeList.appendChild(li);
+      });
+    }
+
+    fetchCoffeeBlends();
+  </script>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>

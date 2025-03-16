@@ -18,7 +18,8 @@ const customDataProvider = {
       return { data }; // Return the fetched recipe data
     }
 
-    return dataProvider.getOne(resource, params); // Default behavior for other resources
+    // For all other resources, use the default behavior
+    return dataProvider.getOne(resource, params); 
   },
 };
 

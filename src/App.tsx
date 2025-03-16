@@ -47,6 +47,7 @@ import RecipeList from "./pages/recipe-manager/reciple-list";
 import { RecipeShow } from "./pages/recipe-manager/RecipeShow"; //
 
 // ✅ Create a Custom Notification Provider
+// App.tsx
 const CustomNotificationProvider = () => {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
