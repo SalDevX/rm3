@@ -55,6 +55,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # Bind SQLAlchemy to Flask app
 db.init_app(app)
 
+
+
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)  # Add this line
 
@@ -197,6 +199,10 @@ def save_recipe():
 
     db.session.commit()
     return jsonify({"message": "Recipe saved successfully!"}), 201
+
+with app.app_context():
+    from models import Recipe, Ingredient  # Explicit model import
+    db.create_all()  # Create tables if not existing
 
 
 # ✅ Run Flask app
