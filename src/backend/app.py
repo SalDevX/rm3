@@ -1,9 +1,13 @@
-from flask import Flask, request, jsonify
+import sys
+import os
 
-from flask_sqlalchemy import SQLAlchemy 
+# Ensure the correct path is set before importing modules
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from dotenv import load_dotenv
-import os
 from database import db
 from models import Recipe, Ingredient
 from flask_migrate import Migrate
@@ -11,20 +15,17 @@ from sqlalchemy import func
 from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
 
 
-# Load environment variables
-load_dotenv()
+# Load .env only in development
+if os.getenv("FLASK_ENV") != "production":
+    load_dotenv()
 
 # Flask app setup
 app = Flask(__name__)
 
 # Add CORS configuration at the top of app.py
-CORS(app, resources={
-    r"/recipes/*": {
-        "origins": "http://localhost:3000",  # Update with your frontend origin
-        "methods": ["GET", "POST", "PUT", "DELETE"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
+# CORS Configuration (Allow localhost + Heroku frontend)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://recipe-manager3-d7093a765939.herokuapp.com"]}})
+
 
 # Database configuration
 db_url = os.getenv("DATABASE_URL")
